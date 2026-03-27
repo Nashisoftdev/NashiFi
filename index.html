@@ -3,218 +3,280 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nashi Finance Tracker</title>
+<title>NashiFi</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
 body{background:#020617;color:#e2e8f0}
-.container{max-width:900px;margin:auto;padding:20px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+.container{max-width:1100px;margin:auto;padding:20px}
+
+header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:20px}
 .logo{font-size:26px;font-weight:600;background:linear-gradient(90deg,#22c55e,#4ade80);-webkit-background-clip:text;color:transparent}
-input,select,button{background:#0f172a;border:1px solid #1e293b;padding:10px 12px;border-radius:10px;color:white}
-button{background:#22c55e;color:#022c22;border:none;cursor:pointer}
-.layout{display:grid;grid-template-columns:300px 1fr;gap:20px}
-.sidebar{background:#0f172a;padding:20px;border-radius:16px}
-.main{display:flex;flex-direction:column;gap:20px}
+
+input,select,button{
+ background:#0f172a;border:1px solid #1e293b;padding:10px;border-radius:10px;color:white
+}
+
+button{background:#22c55e;color:#022c22;cursor:pointer;border:none}
+
+.layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+
 .panel{background:#0f172a;padding:20px;border-radius:16px}
+
 .token{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b}
-canvas{max-height:250px}
-.actions{display:flex;gap:8px}
-.small{font-size:12px;opacity:.7;margin-top:6px}
-.hide{font-size:0px;opacity:.7;margin-top:6px}
+
+.small{font-size:12px;opacity:.7}
+
+canvas{max-height:260px}
 </style>
 </head>
+
 <body>
 <div class="container">
+
 <header>
-<div class="logo">Nashi Finance Tracker</div>
+<div class="logo">NashiFi</div>
+
 <div style="display:flex;gap:10px;flex-wrap:wrap">
-<select id="chainSelect">
-<option value="btc">Bitcoin</option>
+<select id="chain"> 
 <option value="eth">Ethereum</option>
-<option value="avax">Avalanche</option>  
-<option value="arb">Arbitrum</option>
-<option value="base">Base</option>
-<option value="bsc">BNB</option>
-<!-- <option value="ink">Ink</option> -->
-<option value="opt">Optimism</option>
 <option value="polygon">Polygon</option>
-<option value="sol">Solana</option>
+<option value="arb">Arbitrum</option>
+<!-- <option value="opt">Optimism</option> -->
+<option value="base">Base</option>
+<option value="bnb">BNB Chain</option>
 </select>
-<input type="text" id="addressInput" placeholder="Cole o endereço da carteira..." style="min-width:260px">
-<div class="actions">
-<button onclick="loadPortfolio()">🔍 Buscar</button>
-<!-- <button onclick="copyLink()">🔗 Copiar link</button> -->
-</div>
+
+<input id="address" placeholder="Cole o endereço da carteira">
+<button onclick="load()">Buscar</button>
 </div>
 </header>
 
 <div class="layout">
-<div class="sidebar">
+
 <div class="panel">
 <h3>Total</h3>
-<div id="totalValue">$0</div>
-<div class="hide" id="currentLink"></div>
-</div>
-<div class="panel">
-<h3>Tokens</h3>
+<div id="total">$0</div>
+
+<h3 style="margin-top:20px">Assets</h3>
 <div id="tokens"></div>
 </div>
-</div>
 
-<div class="main">
 <div class="panel">
 <h3>Distribuição</h3>
 <canvas id="chart"></canvas>
 </div>
-</div>
+
 </div>
 </div>
 
 <script>
+
+const KEY = "SHLBZlxaa-22e4vc4H5Wt";
+
+// RPC
+const RPC = {  
+ eth: "https://eth-mainnet.g.alchemy.com/v2/",
+ polygon: "https://polygon-mainnet.g.alchemy.com/v2/",
+ arb: "https://arb-mainnet.g.alchemy.com/v2/",
+ opt: "https://opt-mainnet.g.alchemy.com/v2/",
+ base: "https://base-mainnet.g.alchemy.com/v2/",
+ bnb: "https://bnb-mainnet.g.alchemy.com/v2/"
+};
+
+// DeFiLlama chains
+const LLAMA = {
+ eth:"ethereum",
+ polygon:"polygon",
+ arb:"arbitrum",
+ opt:"optimism",
+ base:"base",
+ bnb:"bsc"
+};
+
+// Tokens nativos
+const NATIVE = {  
+ eth:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
+ polygon:{symbol:"POL",decimals:18,id:"coingecko:polygon-ecosystem-token"},
+ arb:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
+ opt:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
+ base:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
+ bnb:{symbol:"BNB",decimals:18,id:"coingecko:binancecoin"}
+};
+
 let chart;
 
-function buildURL(address, chain){
- const url = new URL(window.location.href);
- url.searchParams.set('address', address);
- url.searchParams.set('chain', chain);
- return url.toString();
+// BigInt seguro
+function format(hex, decimals){
+ const balance = BigInt(hex);
+ const divisor = BigInt(10)**BigInt(decimals);
+
+ const int = balance/divisor;
+ const frac = (balance%divisor).toString().padStart(decimals,'0').slice(0,8);
+
+ return `${int}.${frac}`;
 }
 
-function applyURL(address, chain){
- const newUrl = buildURL(address, chain);
- window.history.pushState({address, chain}, '', newUrl);
- document.getElementById('currentLink').innerText = newUrl;
+// preços ERC20
+async function getPrices(list, chain){
+ const ids = list.map(t=>`${LLAMA[chain]}:${t.contractAddress}`);
+ const url = `https://coins.llama.fi/prices/current/${ids.join(",")}`;
+
+ const res = await fetch(url);
+ const data = await res.json();
+
+ return data.coins || {};
 }
 
-function readURL(){
- const params = new URLSearchParams(window.location.search);
- const address = params.get('address');
- const chain = params.get('chain');
- if(chain) document.getElementById('chainSelect').value = chain;
- if(address){
-   document.getElementById('addressInput').value = address;
-   loadPortfolio(false); // não atualizar URL de novo
- }
-}
+async function load(){
 
-async function loadPortfolio(updateUrl = true){
- const account = document.getElementById('addressInput').value.trim();
- if(!account) return alert('Digite um endereço válido');
+ const addr = document.getElementById("address").value.trim();
+ const chain = document.getElementById("chain").value;
 
- const chain=document.getElementById('chainSelect').value;
- let url='';
+ if(!addr) return alert("Digite um endereço");
 
- if(chain==='btc'){
-   url=`https://api.covalenthq.com/v1/20090103/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
+ const tokensDiv = document.getElementById("tokens");
+ tokensDiv.innerHTML="Carregando...";
 
- if(chain==='eth'){
-   url=`https://api.covalenthq.com/v1/1/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
- 
- if(chain==='avax'){
-   url=`https://api.covalenthq.com/v1/43114/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='arb'){
-   url=`https://api.covalenthq.com/v1/42161/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='base'){
-   url=`https://api.covalenthq.com/v1/8453/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
- 
- if(chain==='bsc'){
-   url=`https://api.covalenthq.com/v1/56/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='ink'){
-   url=`https://api.covalenthq.com/v1/57073/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='opt'){
-   url=`https://api.covalenthq.com/v1/10/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='polygon'){
-   url=`https://api.covalenthq.com/v1/137/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(chain==='sol'){
-   url=`https://api.covalenthq.com/v1/1399811149/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
- }
-
- if(updateUrl) applyURL(account, chain);
-
- try{
- const res=await fetch(url);
- const data=await res.json();
-
- const tokensDiv=document.getElementById('tokens');
- tokensDiv.innerHTML='';
-
+ let total=0;
  let labels=[];
  let values=[];
- let total=0;
+ let finalList=[];
 
- 
+ try{
 
- if(data.data){
-  data.data.items.slice(0,10).forEach(t=>{
-    const usd = t.quote || 0;
+ // 🔥 NATIVE BALANCE
+ const nativeRes = await fetch(RPC[chain]+KEY,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   jsonrpc:"2.0",
+   method:"eth_getBalance",
+   params:[addr,"latest"],
+   id:1
+  })
+ });
 
-    if(usd > 0){
-      total += usd;
-      labels.push(t.contract_ticker_symbol);
-      values.push(usd);
+ const nativeData = await nativeRes.json();
 
-      const el = document.createElement('div');
-      el.className='token';
-      el.innerHTML = `<span>${t.contract_ticker_symbol}</span><span>$${usd.toFixed(2)}</span>`;
-      tokensDiv.appendChild(el);
-    }
+ const nativeInfo = NATIVE[chain];
+
+ const nativeAmount = format(nativeData.result,nativeInfo.decimals);
+
+ const priceRes = await fetch(`https://coins.llama.fi/prices/current/${nativeInfo.id}`);
+ const priceData = await priceRes.json();
+
+ const nativePrice = priceData.coins[nativeInfo.id]?.price || 0;
+
+ const nativeUSD = nativePrice * parseFloat(nativeAmount);
+
+ if(nativeUSD>0){
+  finalList.push({
+   symbol:nativeInfo.symbol,
+   amount:nativeAmount,
+   usd:nativeUSD
   });
-}
+ }
 
- document.getElementById('totalValue').innerText='$'+total.toFixed(2);
+ // 🔥 ERC20
+ const res = await fetch(RPC[chain]+KEY,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({
+   jsonrpc:"2.0",
+   method:"alchemy_getTokenBalances",
+   params:[addr,"erc20"],
+   id:1
+  })
+ });
+
+ const data = await res.json();
+
+ if(!data.result){
+  tokensDiv.innerHTML="Erro na API";
+  return;
+ }
+
+ let tokens = data.result.tokenBalances
+  .filter(t=>t.tokenBalance!=="0x0")
+  .slice(0,50);
+
+ const prices = await getPrices(tokens.slice(0,30),chain);
+
+ for(const t of tokens){
+
+  const metaRes = await fetch(RPC[chain]+KEY,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({
+    jsonrpc:"2.0",
+    method:"alchemy_getTokenMetadata",
+    params:[t.contractAddress],
+    id:1
+   })
+  });
+
+  const meta = await metaRes.json();
+
+  const symbol = meta.result?.symbol || "???";
+  const decimals = meta.result?.decimals || 18;
+
+  const amount = format(t.tokenBalance,decimals);
+
+  const key = `${LLAMA[chain]}:${t.contractAddress}`;
+  const price = prices[key]?.price || 0;
+
+  const usd = price * parseFloat(amount);
+
+  if(usd>0){
+   finalList.push({symbol,amount,usd});
+  }
+ }
+
+ // ordena
+ finalList.sort((a,b)=>b.usd-a.usd);
+
+ tokensDiv.innerHTML="";
+
+ finalList.forEach(t=>{
+  total+=t.usd;
+
+  labels.push(t.symbol);
+  values.push(t.usd);
+
+  const el=document.createElement("div");
+  el.className="token";
+
+  el.innerHTML=`
+   <div>
+    <div>${t.symbol}</div>
+    <div class="small">${t.amount}</div>
+   </div>
+   <div>$${t.usd.toFixed(2)}</div>
+  `;
+
+  tokensDiv.appendChild(el);
+ });
+
+ document.getElementById("total").innerText="$"+total.toFixed(2);
 
  if(chart) chart.destroy();
- chart=new Chart(document.getElementById('chart'),{
-  type:'doughnut',
-  data:{labels:labels,datasets:[{data:values}]}
+
+ chart=new Chart(document.getElementById("chart"),{
+  type:"doughnut",
+  data:{labels,datasets:[{data:values}]}
  });
 
  }catch(e){
-   alert('Erro ao carregar dados');
-   console.log(e);
+  console.log(e);
+  tokensDiv.innerHTML="Erro ao carregar";
  }
+
 }
-
-function copyLink(){
- const account = document.getElementById('addressInput').value.trim();
- const chain=document.getElementById('chainSelect').value;
- if(!account) return alert('Busque uma carteira primeiro');
- const link = buildURL(account, chain);
- navigator.clipboard.writeText(link);
- alert('Link copiado!');
-}
-
-// Enter key
-document.getElementById('addressInput').addEventListener('keypress', (e)=>{
- if(e.key==='Enter') loadPortfolio();
-});
-
-// change chain
-
-document.getElementById('chainSelect').addEventListener('change',()=>{
- const val = document.getElementById('addressInput').value.trim();
- if(val) loadPortfolio();
-});
-
-// init
-readURL();
 </script>
+
 </body>
 </html>
