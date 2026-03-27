@@ -9,9 +9,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
 body{background:#020617;color:#e2e8f0}
-.container{max-width:1300px;margin:auto;padding:20px}
+.container{max-width:900px;margin:auto;padding:20px}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}
-.logo{font-size:28px;font-weight:600;background:linear-gradient(90deg,#22c55e,#4ade80);-webkit-background-clip:text;color:transparent}
+.logo{font-size:26px;font-weight:600;background:linear-gradient(90deg,#22c55e,#4ade80);-webkit-background-clip:text;color:transparent}
 input,select,button{background:#0f172a;border:1px solid #1e293b;padding:10px 12px;border-radius:10px;color:white}
 button{background:#22c55e;color:#022c22;border:none;cursor:pointer}
 .layout{display:grid;grid-template-columns:300px 1fr;gap:20px}
@@ -31,9 +31,16 @@ canvas{max-height:250px}
 <div class="logo">Nashi Finance Tracker</div>
 <div style="display:flex;gap:10px;flex-wrap:wrap">
 <select id="chainSelect">
+<option value="btc">Bitcoin</option>
 <option value="eth">Ethereum</option>
-<option value="bsc">BSC</option>
+<option value="avax">Avalanche</option>  
+<option value="arb">Arbitrum</option>
+<option value="base">Base</option>
+<option value="bsc">BNB</option>
+<!-- <option value="ink">Ink</option> -->
+<option value="opt">Optimism</option>
 <option value="polygon">Polygon</option>
+<option value="sol">Solana</option>
 </select>
 <input type="text" id="addressInput" placeholder="Cole o endereço da carteira..." style="min-width:260px">
 <div class="actions">
@@ -99,14 +106,44 @@ async function loadPortfolio(updateUrl = true){
  const chain=document.getElementById('chainSelect').value;
  let url='';
 
+ if(chain==='btc'){
+   url=`https://api.covalenthq.com/v1/20090103/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
  if(chain==='eth'){
    url=`https://api.covalenthq.com/v1/1/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
  }
+ 
+ if(chain==='avax'){
+   url=`https://api.covalenthq.com/v1/43114/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
+ if(chain==='arb'){
+   url=`https://api.covalenthq.com/v1/42161/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
+ if(chain==='base'){
+   url=`https://api.covalenthq.com/v1/8453/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+ 
  if(chain==='bsc'){
    url=`https://api.covalenthq.com/v1/56/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
  }
+
+ if(chain==='ink'){
+   url=`https://api.covalenthq.com/v1/57073/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
+ if(chain==='opt'){
+   url=`https://api.covalenthq.com/v1/10/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
  if(chain==='polygon'){
    url=`https://api.covalenthq.com/v1/137/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
+ }
+
+ if(chain==='sol'){
+   url=`https://api.covalenthq.com/v1/1399811149/address/${account}/balances_v2/?key=cqt_rQPfwPHBV7vHtvTfvDrK339rHwyQ`;
  }
 
  if(updateUrl) applyURL(account, chain);
