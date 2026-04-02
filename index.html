@@ -10,25 +10,25 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
-body{background:#020617;color:#e2e8f0}
+body{background:#003c3c;color:#e2e8f0}
 .container{max-width:1100px;margin:auto;padding:20px}
 
 header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:20px}
-.logo{font-size:26px;font-weight:600;background:linear-gradient(90deg,#22c55e,#4ade80);-webkit-background-clip:text;color:transparent}
+.logo{font-size:26px;font-weight:600;background:linear-gradient(90deg,#c98429,#f9bf5c);-webkit-background-clip:text;color:transparent}
 
 input,select,button{
- background:#0f172a;border:1px solid #1e293b;padding:10px;border-radius:10px;color:white
+ background:#003131;border:1px solid #1e293b;padding:10px;border-radius:10px;color:white
 }
 
-button{background:#22c55e;color:#022c22;cursor:pointer;border:none}
+button{background:#f9bf5c;color:#022c22;cursor:pointer;border:none}
 
-.layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.layout{display:grid;grid-template-columns:300px 1fr; gap:20px} 
 
-.panel{background:#0f172a;padding:20px;border-radius:16px}
+.panel{background:#005151;padding:20px;border-radius:16px}
 
 .token{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b}
 
-.small{font-size:12px;opacity:.7}
+.small{font-size:12px;opacity:.8}
 
 canvas{max-height:260px}
 </style>
@@ -84,7 +84,7 @@ const RPC = {
  arb: "https://arb-mainnet.g.alchemy.com/v2/",
  opt: "https://opt-mainnet.g.alchemy.com/v2/",
  base: "https://base-mainnet.g.alchemy.com/v2/",
- bnb: "https://bnb-mainnet.g.alchemy.com/v2/"
+ bnb: "https://bnb-mainnet.g.alchemy.com/v2/" 
 };
 
 // DeFiLlama chains
@@ -94,7 +94,7 @@ const LLAMA = {
  arb:"arbitrum",
  opt:"optimism",
  base:"base",
- bnb:"bsc"
+ bnb:"bsc"   
 };
 
 // Tokens nativos
@@ -104,7 +104,8 @@ const NATIVE = {
  arb:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
  opt:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
  base:{symbol:"ETH",decimals:18,id:"coingecko:ethereum"},
- bnb:{symbol:"BNB",decimals:18,id:"coingecko:binancecoin"}
+ bnb:{symbol:"BNB",decimals:18,id:"coingecko:binancecoin"},
+ sol:{symbol:"SOL",decimals:18,id:"coingecko:solana"}
 };
 
 let chart;
